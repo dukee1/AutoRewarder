@@ -2537,6 +2537,15 @@ class AutoRewarderAPI:
             else:
                 self.log("Done!")
 
+                # Register completed runs for the GitHub star prompt
+                before = self.global_settings.get_star_prompt_state()
+
+                if before["star_prompt_status"] != "pending":
+                    after = self.global_settings.register_successful_run()
+
+                    if after["star_prompt_status"] == "pending":
+                        self._notify_star_prompt()
+
                 if self.account_meta is not None:
                     try:
                         from datetime import date
@@ -2619,6 +2628,16 @@ class AutoRewarderAPI:
                 )
             except Exception:
                 pass
+
+    def _notify_star_prompt(self):
+        """Ask the GUI (if attached) to show the GitHub star prompt."""
+        if self._webview_window:
+            try:
+                self._webview_window.evaluate_js(
+                    "typeof show_star_prompt === 'function' && show_star_prompt()"
+                )
+            except Exception as e:
+                self.log(f"[WARNING] Failed to show star prompt: {e}")
 
     def _run_daily_only(self):
         """

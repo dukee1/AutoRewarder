@@ -50,6 +50,59 @@ function show_toast(message, type, opts) {
   if (duration > 0) setTimeout(dismiss, duration);
 }
 
+function show_star_prompt() {
+  const container = document.getElementById('toast_container');
+  if (!container) return;
+
+  if (document.querySelector('.star-prompt-toast')) return;
+
+  const toast = document.createElement('div');
+  toast.className = 'toast info star-prompt-toast';
+
+  toast.innerHTML = `
+    <div class="toast-msg">
+      <strong>Enjoying AutoRewarder?</strong>
+      <div>Consider leaving a star on GitHub, it really helps to project development.</div>
+      <div class="star-prompt-actions">
+        <button class="star-prompt-star">Leave a star</button>
+        <button class="star-prompt-later">Later</button>
+        <button class="star-prompt-disable">Don't show again</button>
+      </div>
+    </div>
+    <button class="toast-close" aria-label="Dismiss">&times;</button>
+  `
+  container.appendChild(toast);
+
+  document.getElementsByClassName('star-prompt-star').onclick = () => {
+
+  }
+
+  document.getElementsByClassName('star-prompt-later').onclick = () => {
+  }
+
+  document.getElementsByClassName('star-prompt-disable').onclick = () => {
+
+  }
+}
+
+async function check_star_prompt() {
+  if (
+    !window.pywebview ||
+    !pywebview.api ||
+    typeof pywebview.api.get_star_prompt_state !== 'function'
+  ) { return; }
+
+  try {
+    const state = await pywebview.api.get_star_prompt_state();
+
+    if (state && state.star_prompt_status === 'pending') {
+      show_star_prompt();
+    }
+  } catch (error) {
+    show_toast('Could not load the GitHub star reminder.', 'error');
+  }
+}
+
 // =========================================================================
 // Generic modal (prompt/confirm replacement)
 // =========================================================================
@@ -2030,4 +2083,5 @@ window.addEventListener('pywebviewready', function() {
 
   refresh_account_ui();
   start_loader();
+  check_star_prompt();
 });

@@ -635,6 +635,15 @@ class AutoRewarderAPI:
             self.log(f"[WARNING] Failed to save manual search delay: {e}")
             return False
 
+    def get_star_prompt_state(self):
+        return self.global_settings.get_star_prompt_state()
+
+    def postpone_star_prompt(self):
+        return self.global_settings.postpone_star_prompt()
+
+    def disable_star_prompt(self):
+        return self.global_settings.disable_star_prompt()
+
     # ------------------------------------------------------------------
     # Exposed to JS: LLM-generated search terms + locale
     # ------------------------------------------------------------------

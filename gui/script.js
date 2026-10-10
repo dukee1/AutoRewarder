@@ -62,7 +62,9 @@ function show_star_prompt() {
   toast.innerHTML = `
     <div class="toast-msg">
       <strong>Enjoying AutoRewarder?</strong>
-      <div>Consider leaving a star on GitHub, it really helps to project development.</div>
+      <div>
+        Consider leaving a star on GitHub! It really helps the project grow and supports future updates.
+      </div>
       <div class="star-prompt-actions">
         <button class="star-prompt-star">Leave a star</button>
         <button class="star-prompt-later">Later</button>
@@ -73,16 +75,78 @@ function show_star_prompt() {
   `
   container.appendChild(toast);
 
-  document.getElementsByClassName('star-prompt-star').onclick = () => {
+  toast.querySelector('.toast-close').addEventListener(
+    'click',
+    () => handle_star_prompt_later(toast)
+  );
 
+  toast.querySelector('.star-prompt-star').addEventListener(
+    'click',
+    () => handle_star_prompt_star(toast)
+  );
+
+  toast.querySelector('.star-prompt-later').addEventListener(
+    'click',
+    () => handle_star_prompt_later(toast)
+  );
+
+  toast.querySelector('.star-prompt-disable').addEventListener(
+    'click',
+    () => handle_star_prompt_disable(toast)
+  );
+}
+
+function close_star_prompt(toast) {
+  toast.classList.add('hiding');
+  toast.addEventListener('animationend', () => toast.remove(), { once: true });
+};
+
+async function handle_star_prompt_star(toast) {
+  try {
+    const ok = await pywebview.api.disable_star_prompt();
+
+    if (!ok) {
+      show_toast('Could not save star prompt preference.', 'error');
+      return;
+    }
+
+    await pywebview.api.open_link(aboutRepoUrl);
+
+  } catch (error) {
+    show_toast('Could not open GitHub.', 'error');
   }
 
-  document.getElementsByClassName('star-prompt-later').onclick = () => {
+  close_star_prompt(toast);
+}
+
+async function handle_star_prompt_later(toast) {
+  try {
+    const ok = await pywebview.api.postpone_star_prompt();
+
+    if (!ok) {
+      show_toast('Could not postpone the reminder.', 'error');
+      return;
+    }
+  } catch (error) {
+    show_toast('Could not postpone the reminder.', 'error');
   }
 
-  document.getElementsByClassName('star-prompt-disable').onclick = () => {
+  close_star_prompt(toast);
+}
 
+async function handle_star_prompt_disable(toast) {
+  try {
+    const ok = await pywebview.api.disable_star_prompt();
+
+    if (!ok) {
+      show_toast('Could not disable the star prompt.', 'error');
+      return;
+    }
+  } catch (error) {
+    show_toast('Could not disable the star prompt.', 'error');
   }
+
+  close_star_prompt(toast);
 }
 
 async function check_star_prompt() {

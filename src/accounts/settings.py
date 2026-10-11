@@ -150,6 +150,13 @@ class GlobalSettingsManager:
             # Delay range for normal manual searches
             "manual_search_delay_min": 4.0,
             "manual_search_delay_max": 10.0,
+            # For github star toast
+            # Prompt after 2 successful runs, and only once.
+            "successful_runs": 0,
+            # None -> not yet prompted,
+            # "pending" -> prompt now,
+            # "disabled" -> don't prompt
+            "star_prompt_status": None,
         }
 
         if APP_DIR and not os.path.exists(APP_DIR):
@@ -338,6 +345,83 @@ class GlobalSettingsManager:
         settings["manual_search_delay_max"] = maximum
         self.save_settings(settings)
 
+        return True
+
+    def get_star_prompt_state(self):
+        """
+        Return the state of the GitHub star prompt.
+
+        Returns:
+            dict: { "successful_runs": int, "star_prompt_status": str or None }
+        """
+        settings = self.get_settings()
+        return self._star_prompt_state_for_settings(settings)
+
+    def _star_prompt_state_for_settings(self, settings):
+        """Normalize the star prompt state from settings."""
+        try:
+            successful_runs = int(settings.get("successful_runs", 0))
+        except (TypeError, ValueError):
+            successful_runs = 0
+
+        status = settings.get("star_prompt_status")
+
+        if status not in (None, "pending", "disabled"):
+            status = None
+
+        return {
+            "successful_runs": successful_runs,
+            "star_prompt_status": status,
+        }
+
+    def register_successful_run(self):
+        """
+        Register a successful AutoRewarder run for the GitHub star prompt.
+
+        Returns:
+            dict: { "successful_runs": int, "star_prompt_status": str or None }
+        """
+        settings = self.settings_for_update()
+        state = self._star_prompt_state_for_settings(settings)
+
+        if state["star_prompt_status"] == "disabled":
+            return state
+
+        successful_runs = state["successful_runs"] + 1
+
+        if successful_runs >= 2:
+            successful_runs = 2
+            status = "pending"
+        else:
+            status = state["star_prompt_status"]
+
+        settings["successful_runs"] = successful_runs
+        settings["star_prompt_status"] = status
+        self.save_settings(settings)
+
+        return {
+            "successful_runs": successful_runs,
+            "star_prompt_status": status,
+        }
+
+    def postpone_star_prompt(self):
+        """
+        Postpone the GitHub star prompt by resetting the successful runs count
+        and clearing the prompt status.
+        """
+        settings = self.settings_for_update()
+        settings["successful_runs"] = 0
+        settings["star_prompt_status"] = None
+        self.save_settings(settings)
+        return True
+
+    def disable_star_prompt(self):
+        """
+        Disable the GitHub star prompt.
+        """
+        settings = self.settings_for_update()
+        settings["star_prompt_status"] = "disabled"
+        self.save_settings(settings)
         return True
 
     # ------------------------------------------------------------------

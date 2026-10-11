@@ -50,6 +50,130 @@ function show_toast(message, type, opts) {
   if (duration > 0) setTimeout(dismiss, duration);
 }
 
+function show_star_prompt() {
+  const container = document.getElementById('toast_container');
+  if (!container) return;
+
+  if (document.querySelector('.star-prompt-toast')) return;
+
+  const toast = document.createElement('div');
+  toast.className = 'toast info star-prompt-toast';
+
+  toast.innerHTML = `
+    <div class="toast-msg">
+      <strong>Enjoying AutoRewarder?</strong>
+      <div>
+        Consider leaving a star on GitHub! It really helps the project grow and supports future updates.
+      </div>
+      <div class="star-prompt-actions">
+        <button class="star-prompt-star">Leave a star</button>
+        <button class="star-prompt-later">Later</button>
+        <button class="star-prompt-disable">Don't show again</button>
+      </div>
+    </div>
+    <button class="toast-close" aria-label="Dismiss">&times;</button>
+  `
+  container.appendChild(toast);
+
+  toast.querySelector('.toast-close').addEventListener(
+    'click',
+    () => handle_star_prompt_later(toast)
+  );
+
+  toast.querySelector('.star-prompt-star').addEventListener(
+    'click',
+    () => handle_star_prompt_star(toast)
+  );
+
+  toast.querySelector('.star-prompt-later').addEventListener(
+    'click',
+    () => handle_star_prompt_later(toast)
+  );
+
+  toast.querySelector('.star-prompt-disable').addEventListener(
+    'click',
+    () => handle_star_prompt_disable(toast)
+  );
+}
+
+function close_star_prompt(toast) {
+  toast.classList.add('hiding');
+  toast.addEventListener('animationend', () => toast.remove(), { once: true });
+};
+
+async function handle_star_prompt_star(toast) {
+  try {
+    const opened = await pywebview.api.open_link(aboutRepoUrl);
+
+    if (!opened) {
+      show_toast('Could not open GitHub.', 'error');
+      return;
+    }
+
+    const ok = await pywebview.api.disable_star_prompt();
+
+    if (!ok) {
+      show_toast('Could not save star prompt preference.', 'error');
+      return;
+    }
+  } catch (error) {
+    show_toast('Could not open GitHub.', 'error');
+    return;
+  }
+
+  close_star_prompt(toast);
+}
+
+async function handle_star_prompt_later(toast) {
+  try {
+    const ok = await pywebview.api.postpone_star_prompt();
+
+    if (!ok) {
+      show_toast('Could not postpone the reminder.', 'error');
+      return;
+    }
+  } catch (error) {
+    show_toast('Could not postpone the reminder.', 'error');
+    return;
+  }
+
+  close_star_prompt(toast);
+}
+
+async function handle_star_prompt_disable(toast) {
+  try {
+    const ok = await pywebview.api.disable_star_prompt();
+
+    if (!ok) {
+      show_toast('Could not disable the star prompt.', 'error');
+      return;
+    }
+  } catch (error) {
+    show_toast('Could not disable the star prompt.', 'error');
+    return;
+  }
+
+  close_star_prompt(toast);
+}
+
+async function check_star_prompt() {
+  if (
+    !window.pywebview ||
+    !pywebview.api ||
+    typeof pywebview.api.get_star_prompt_state !== 'function'
+  ) { return; }
+
+  try {
+    const state = await pywebview.api.get_star_prompt_state();
+
+    if (state && state.star_prompt_status === 'pending') {
+      show_star_prompt();
+    }
+  } catch (error) {
+    show_toast('Could not load the GitHub star reminder.', 'error');
+  }
+}
+
 // =========================================================================
 // Generic modal (prompt/confirm replacement)
 // =========================================================================
@@ -2030,4 +2154,5 @@ window.addEventListener('pywebviewready', function() {
 
   refresh_account_ui();
   start_loader();
+  check_star_prompt();
 });

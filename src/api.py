@@ -407,7 +407,7 @@ class AutoRewarderAPI:
 
     def open_link(self, url):
         """Open a URL in the system default browser."""
-        webbrowser.open(url)
+        return webbrowser.open(url)
 
     # ------------------------------------------------------------------
     # Exposed to JS: Settings > About
@@ -634,6 +634,15 @@ class AutoRewarderAPI:
         except Exception as e:
             self.log(f"[WARNING] Failed to save manual search delay: {e}")
             return False
+
+    def get_star_prompt_state(self):
+        return self.global_settings.get_star_prompt_state()
+
+    def postpone_star_prompt(self):
+        return self.global_settings.postpone_star_prompt()
+
+    def disable_star_prompt(self):
+        return self.global_settings.disable_star_prompt()
 
     # ------------------------------------------------------------------
     # Exposed to JS: LLM-generated search terms + locale
@@ -2528,6 +2537,29 @@ class AutoRewarderAPI:
             else:
                 self.log("Done!")
 
+                # Register completed runs for the GitHub star prompt
+                completed_activity = (
+                    self._session_counts.get("pc", 0) > 0
+                    or self._session_counts.get("mobile", 0) > 0
+                    or self._session_counts.get("cards", 0) > 0
+                    or self._session_counts.get("earn", 0) > 0
+                    or self._session_counts.get("quests", 0) > 0
+                )
+
+                if completed_activity:
+                    try:
+                        before = self.global_settings.get_star_prompt_state()
+
+                        if before["star_prompt_status"] != "pending":
+                            after = self.global_settings.register_successful_run()
+
+                            if after["star_prompt_status"] == "pending":
+                                self._notify_star_prompt()
+                    except OSError as e:
+                        self.log(
+                            f"[WARNING] Failed to update GitHub star prompt state: {e}"
+                        )
+
                 if self.account_meta is not None:
                     try:
                         from datetime import date
@@ -2610,6 +2642,16 @@ class AutoRewarderAPI:
                 )
             except Exception:
                 pass
+
+    def _notify_star_prompt(self):
+        """Ask the GUI (if attached) to show the GitHub star prompt."""
+        if self._webview_window:
+            try:
+                self._webview_window.evaluate_js(
+                    "typeof show_star_prompt === 'function' && show_star_prompt()"
+                )
+            except Exception as e:
+                self.log(f"[WARNING] Failed to show star prompt: {e}")
 
     def _run_daily_only(self):
         """

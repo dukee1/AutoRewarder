@@ -926,6 +926,114 @@ input[type="number"]:focus {
 
 .toast-msg { flex: 1; }
 
+.star-prompt-toast {
+  width: min-content;
+  min-width: 280px;
+  max-width: calc(100vw - 32px);
+  padding: 14px 14px 15px 16px;
+  background:
+    linear-gradient(145deg, rgba(91, 142, 255, 0.08), transparent 48%),
+    var(--surface-2);
+  border-color: rgba(91, 142, 255, 0.2);
+  border-left-width: 4px;
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.55),
+    0 0 24px rgba(91, 142, 255, 0.1);
+}
+
+.star-prompt-toast .toast-msg {
+  width: 100%;
+  min-width: 0;
+}
+
+.star-prompt-toast strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.1px;
+}
+
+.star-prompt-toast .toast-msg > div:not(.star-prompt-actions) {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+.star-prompt-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.star-prompt-actions button {
+  min-height: 30px;
+  padding: 5px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  line-height: 1.2;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s,
+    transform 0.15s;
+}
+
+.star-prompt-actions button:active {
+  transform: translateY(1px);
+}
+
+.star-prompt-star {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 2px 8px var(--accent-glow);
+}
+
+.star-prompt-star:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.star-prompt-later {
+  background: var(--surface-3);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.star-prompt-later:hover {
+  background: var(--surface-1);
+  border-color: var(--text-dim);
+}
+
+.star-prompt-disable {
+  background: transparent;
+  border-color: transparent !important;
+  color: var(--text-dim);
+}
+
+.star-prompt-disable:hover {
+  border-color: var(--border) !important;
+  color: var(--text-muted);
+}
+
+.star-prompt-toast .toast-close {
+  margin: -2px -2px 0 4px;
+}
+
+.star-prompt-toast button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .toast-close {
   background: transparent;
   color: var(--text-dim);

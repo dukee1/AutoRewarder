@@ -407,7 +407,7 @@ class AutoRewarderAPI:
 
     def open_link(self, url):
         """Open a URL in the system default browser."""
-        webbrowser.open(url)
+        return webbrowser.open(url)
 
     # ------------------------------------------------------------------
     # Exposed to JS: Settings > About
@@ -2538,13 +2538,27 @@ class AutoRewarderAPI:
                 self.log("Done!")
 
                 # Register completed runs for the GitHub star prompt
-                before = self.global_settings.get_star_prompt_state()
+                completed_activity = (
+                    self._session_counts.get("pc", 0) > 0
+                    or self._session_counts.get("mobile", 0) > 0
+                    or self._session_counts.get("cards", 0) > 0
+                    or self._session_counts.get("earn", 0) > 0
+                    or self._session_counts.get("quests", 0) > 0
+                )
 
-                if before["star_prompt_status"] != "pending":
-                    after = self.global_settings.register_successful_run()
+                if completed_activity:
+                    try:
+                        before = self.global_settings.get_star_prompt_state()
 
-                    if after["star_prompt_status"] == "pending":
-                        self._notify_star_prompt()
+                        if before["star_prompt_status"] != "pending":
+                            after = self.global_settings.register_successful_run()
+
+                            if after["star_prompt_status"] == "pending":
+                                self._notify_star_prompt()
+                    except OSError as e:
+                        self.log(
+                            f"[WARNING] Failed to update GitHub star prompt state: {e}"
+                        )
 
                 if self.account_meta is not None:
                     try:

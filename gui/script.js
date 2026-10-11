@@ -103,17 +103,22 @@ function close_star_prompt(toast) {
 
 async function handle_star_prompt_star(toast) {
   try {
+    const opened = await pywebview.api.open_link(aboutRepoUrl);
+
+    if (!opened) {
+      show_toast('Could not open GitHub.', 'error');
+      return;
+    }
+
     const ok = await pywebview.api.disable_star_prompt();
 
     if (!ok) {
       show_toast('Could not save star prompt preference.', 'error');
       return;
     }
-
-    await pywebview.api.open_link(aboutRepoUrl);
-
   } catch (error) {
     show_toast('Could not open GitHub.', 'error');
+    return;
   }
 
   close_star_prompt(toast);
@@ -129,6 +134,7 @@ async function handle_star_prompt_later(toast) {
     }
   } catch (error) {
     show_toast('Could not postpone the reminder.', 'error');
+    return;
   }
 
   close_star_prompt(toast);
@@ -144,6 +150,7 @@ async function handle_star_prompt_disable(toast) {
     }
   } catch (error) {
     show_toast('Could not disable the star prompt.', 'error');
+    return;
   }
 
   close_star_prompt(toast);

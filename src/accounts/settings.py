@@ -355,7 +355,10 @@ class GlobalSettingsManager:
             dict: { "successful_runs": int, "star_prompt_status": str or None }
         """
         settings = self.get_settings()
+        return self._star_prompt_state_for_settings(settings)
 
+    def _star_prompt_state_for_settings(self, settings):
+        """Normalize the star prompt state from settings."""
         try:
             successful_runs = int(settings.get("successful_runs", 0))
         except (TypeError, ValueError):
@@ -378,8 +381,8 @@ class GlobalSettingsManager:
         Returns:
             dict: { "successful_runs": int, "star_prompt_status": str or None }
         """
-        settings = self.get_settings()
-        state = self.get_star_prompt_state()
+        settings = self.settings_for_update()
+        state = self._star_prompt_state_for_settings(settings)
 
         if state["star_prompt_status"] == "disabled":
             return state
@@ -406,7 +409,7 @@ class GlobalSettingsManager:
         Postpone the GitHub star prompt by resetting the successful runs count
         and clearing the prompt status.
         """
-        settings = self.get_settings()
+        settings = self.settings_for_update()
         settings["successful_runs"] = 0
         settings["star_prompt_status"] = None
         self.save_settings(settings)
@@ -416,7 +419,7 @@ class GlobalSettingsManager:
         """
         Disable the GitHub star prompt.
         """
-        settings = self.get_settings()
+        settings = self.settings_for_update()
         settings["star_prompt_status"] = "disabled"
         self.save_settings(settings)
         return True

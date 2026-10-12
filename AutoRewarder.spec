@@ -1,19 +1,28 @@
 # -*- mode: python ; coding: utf-8 -*-
+import sys
+import os
 from PyInstaller.utils.hooks import collect_data_files
 
+is_windows = sys.platform == 'win32'
+app_icon = os.path.join('assets', 'icon.ico') if is_windows else os.path.join('assets', 'icon.png')
+
+hidden_imports = [
+    'selenium.webdriver.edge.webdriver',
+    'pystray',
+    'PIL',
+    'PIL.Image',
+]
+if is_windows:
+    hidden_imports.append('pystray._win32')
+else:
+    hidden_imports += ['PySide6', 'gi']
 
 a = Analysis(
     ['AutoRewarder.py'],
     pathex=[],
     binaries=[],
     datas=[('gui', 'gui'), ('assets', 'assets')] + collect_data_files('nlpaug'),
-    hiddenimports=[
-        'selenium.webdriver.edge.webdriver',
-        'pystray',
-        'pystray._win32',
-        'PIL',
-        'PIL.Image',
-    ],
+    hiddenimports=hidden_imports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -21,6 +30,9 @@ a = Analysis(
     noarchive=False,
     optimize=0,
 )
+
+a.datas = [x for x in a.datas if not (x[0].startswith('assets/screenshots') or x[0].startswith('assets\\screenshots'))]
+
 pyz = PYZ(a.pure)
 
 exe = EXE(
@@ -39,7 +51,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['assets\\icon.ico'],
+    icon=[app_icon],
 )
 coll = COLLECT(
     exe,

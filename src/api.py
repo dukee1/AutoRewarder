@@ -9,6 +9,7 @@ import math
 import random
 import platform
 import subprocess
+import shutil
 import threading
 import webbrowser
 
@@ -407,7 +408,28 @@ class AutoRewarderAPI:
 
     def open_link(self, url):
         """Open a URL in the system default browser."""
-        return webbrowser.open(url)
+        try:
+            if sys.platform == "linux":
+                command = shutil.which("xdg-open")
+                if command is None:
+                    self.log(f"[ERROR] Could not find xdg-open to open {url}")
+                    print(f"[ERROR] Could not find xdg-open to open {url}")
+                    return False
+
+                subprocess.Popen(
+                    [command, url],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    start_new_session=True,
+                )
+                return True
+
+            return webbrowser.open(url)
+
+        except OSError as e:
+            self.log(f"[ERROR] Failed to open {url}: {e}")
+            print(f"[ERROR] Failed to open {url}: {e}")
+            return False
 
     # ------------------------------------------------------------------
     # Exposed to JS: Settings > About

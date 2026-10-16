@@ -142,5 +142,9 @@ if __name__ == "__main__":
     if close_to_tray:
         _install_tray(window)
 
-    icon_file = "icon.ico" if sys.platform == "win32" else "icon.png"
-    webview.start(icon=os.path.join(ASSETS_DIR, icon_file))
+    if sys.platform == "win32":
+        icon_file = "icon.ico"
+        webview.start(icon=os.path.join(ASSETS_DIR, icon_file))
+    else:
+        icon_file = "icon.png"
+        webview.start(icon=os.path.join(ASSETS_DIR, icon_file), gui="qt")

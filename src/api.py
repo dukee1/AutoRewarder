@@ -407,7 +407,7 @@ class AutoRewarderAPI:
             self.log(f"[ERROR] Error displaying update alert: {e}")
 
     def open_link(self, url):
-        """Open a URL in the system default browser."""
+        """Open a URL in the system default browser (PyInstaller-safe)."""
         try:
             if sys.platform == "linux":
                 command = shutil.which("xdg-open")
@@ -416,15 +416,52 @@ class AutoRewarderAPI:
                     print(f"[ERROR] Could not find xdg-open to open {url}")
                     return False
 
+                # PyInstaller modifies the environment variables of the frozen app.
+                # When we spawn "xdg-open", it inherits these broken variables,
+                # which causes it and the browser it launches to fail silently.
+                env = os.environ.copy()
+
+                if getattr(sys, "frozen", False):
+                    # PyInstaller prepends its temp _MEI folder here. This makes xdg-open
+                    # try to load the app's bundled libraries instead of system ones,
+                    # resulting errors. We restore the original or remove it.
+                    lp_orig = env.get("LD_LIBRARY_PATH_ORIG")
+                    if lp_orig is not None:
+                        env["LD_LIBRARY_PATH"] = lp_orig
+                    else:
+                        env.pop("LD_LIBRARY_PATH", None)
+
+                    # PyInstaller overrides this, so xdg-open can't find system .desktop files
+                    # so it doesn't know which browser to launch. Removing
+                    # the _MEI path allows xdg-open to fall back to standard system paths.
+                    if "XDG_DATA_DIRS" in env:
+                        # Get the exact PyInstaller temp folder path
+                        meipass = getattr(sys, "_MEIPASS", None)
+                        if meipass:
+                            clean_paths = [
+                                p
+                                for p in env["XDG_DATA_DIRS"].split(":")
+                                if not p.startswith(meipass)
+                            ]
+
+                            if not clean_paths:
+                                clean_paths = ["/usr/local/share", "/usr/share"]
+
+                            env["XDG_DATA_DIRS"] = ":".join(clean_paths)
+
+                # start_new_session=True ensures the browser process survives
+                # even if the user closes AutoRewarder immediately after clicking a link.
                 subprocess.Popen(
                     [command, url],
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                     start_new_session=True,
+                    env=env,
                 )
                 return True
-
-            return webbrowser.open(url)
+            else:
+                # Windows handle this natively without PyInstaller issues
+                return webbrowser.open(url)
 
         except OSError as e:
             self.log(f"[ERROR] Failed to open {url}: {e}")
